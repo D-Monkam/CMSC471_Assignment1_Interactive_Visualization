@@ -3,9 +3,11 @@ const margin = {top: 40, right: 80, bottom: 40, left: 220};
 const svgWidth = 700;
 const svgHeight = 750;
 
+
 const width = svgWidth - margin.left - margin.right;
 const height = svgHeight - margin.top - margin.bottom;
 let allData = []
+let citywideYearData = [];
 let targetYear = 2015
 let categories, yAxis
 const t = 1000
@@ -14,6 +16,7 @@ const token = import.meta.env.VITE_CHICAGO_APP_TOKEN
 // trends chart
 const trendWindow = 5;
 let selectedCommunityArea = null;
+let selectedCommunityName = null;
 const trendMargin = {
     top: 20,
     right: 85,
@@ -28,6 +31,10 @@ const trendHeight = trendSvgHeight - trendMargin.top - trendMargin.bottom;
 let loadVersion = 0;
 const stableThreshold = 1;
 
+
+// map
+const mapWidth = 700;
+const mapHeight = 750;
 
 // Bar Chart
 let xScale, yScale
@@ -62,10 +69,25 @@ const svg3 = d3.select("#chart-three")
     .style("height", "auto")
     .style("display", "block");
 
+const mapSvg = d3.select("#chart-map")
+            .append("svg")
+            .attr("viewBox", `0 0 ${mapWidth} ${mapHeight}`);
 
 function init(){
-    setupSelector()
-    loadData()
+    setupSelector();
+    d3.select("#reset-area").on("click", function() {
+        selectedCommunityArea = null;
+        selectedCommunityName = null;
+        d3.select("#area").text("Chicago Overall");
+        mapSvg.selectAll(".community-area")
+            .classed("is-selected", false)
+            .classed("is-hovered", false);
+        d3.select("#map-tooltip").style("display", "none");
+        d3.select(this).property("hidden", true);
+        loadData();
+    });
+    loadMap();
+    loadData();
 }
 
 window.addEventListener('load', init);
@@ -75,6 +97,15 @@ function loadData(){
     const version = ++loadVersion;
     const year = targetYear;
     const communityArea = selectedCommunityArea;
+
+    const geography = communityArea === null
+        ? "Chicago overall"
+        : `${selectedCommunityName || "Community area"} (Area ${communityArea})`;
+
+    d3.select("#chart-one-title")
+        .text(`${geography}: crime types, ${year}`);
+    d3.select("#chart-two-title")
+        .text(`${geography}: arrests by crime type, ${year}`);
 
     $.ajax({
     url: "https://data.cityofchicago.org/api/v3/views/ijzp-q8t2/query.json",
@@ -96,7 +127,7 @@ function loadData(){
     })
     }).done(function(data) {
         if (version !== loadVersion) return;
-
+        citywideYearData = data;
         allData = filterByCommunity(data, communityArea);
 
         updateAxes();
@@ -129,6 +160,7 @@ function setupSelector(){
 
     d3.select('#slider')
         .append('svg')
+        .attr("viewBox", `0 0 ${width + 100} 100`)
         .attr('width', width + 100)  
         .attr('height', 100)
         .append('g')
@@ -313,7 +345,9 @@ function updateStackedVis(){
 async function loadTrendData(endYear, communityArea, version) {
     const startYear = endYear - trendWindow + 1;
 
-    const geography = communityArea === null ?  "Chicago overall": `Community area ${communityArea}`;
+    const geography = communityArea === null
+        ? "Chicago overall"
+        : `${selectedCommunityName || "Community area"} (Area ${communityArea})`;
 
     d3.select("#trend-title").text(`${geography}: change in crime share, ${startYear}-${endYear}`);
 
@@ -612,6 +646,168 @@ function updateTrendVis(trends) {
         .attr("font-size", 11)
         .text(d => `${d3.format("+.2f")(d.change)} pp`);
 
+}
+
+
+// chicago map
+async function loadMap() {
+    try {
+        const boundaries = await d3.json(
+            new URL("../data/Chicago.geojson", import.meta.url).href
+        );
+
+
+        const projection = d3.geoMercator()
+            .fitExtent(
+                [[20, 20], [mapWidth - 20, mapHeight - 20]],
+                boundaries
+            );
+
+        const path = d3.geoPath().projection(projection);
+
+        if (d3.select("#map-tooltip").empty()) {
+            d3.select("body")
+                .append("div")
+                .attr("id", "map-tooltip")
+                .attr("role", "tooltip");
+        }
+
+        let mapGroup = mapSvg.select(".map-areas");
+        if (mapGroup.empty()) {
+            mapGroup = mapSvg.append("g")
+                .attr("class", "map-areas");
+        }
+
+        const mapZoom = d3.zoom()
+        .scaleExtent([1, 6])
+        .on("zoom", function(event) {
+            mapSvg.select(".map-areas")
+                .attr("transform", event.transform);
+        });
+
+        mapSvg.call(mapZoom);
+
+        d3.select("#zoom-in")
+        .on("click", function() {
+        mapSvg.transition()
+            .duration(250)
+            .call(mapZoom.scaleBy, 1.5);
+        });
+
+        d3.select("#zoom-out")
+        .on("click", function() {
+        mapSvg.transition()
+            .duration(250)
+            .call(mapZoom.scaleBy, 1 / 1.5);
+        });
+
+        d3.select("#reset-view")
+        .on("click", function() {
+        mapSvg.transition()
+            .duration(250)
+            .call(mapZoom.transform, d3.zoomIdentity);
+        });
+
+        mapGroup.selectAll(".community-area")
+            .data(boundaries.features, d => d.properties.area_numbe)
+            .join(
+                function(enter) {
+                    return enter
+                        .append("path")
+                        .attr("class", "community-area")
+                        .attr("d", path)
+                        .on("mouseover", function(event, d) {
+                            
+                            d3.select(this).classed("is-hovered", true);
+                            const stats = getCommunityStats(d.properties.area_numbe);
+
+                            d3.select("#map-tooltip")
+                                .style("display", "block")
+                                .text([
+                                        `${d.properties.community} · Area ${d.properties.area_numbe}`,
+                                        `${targetYear}`,
+                                        "",
+                                        `Reported incidents: ${d3.format(",")(stats.total)}`,
+                                        `Most common: ${stats.mostCommonType} — ` +
+                                            `${d3.format(",")(stats.mostCommonCount)} ` +
+                                            `(${d3.format(".0%")(stats.mostCommonShare)})`,
+                                        `Arrest share: ${
+                                            stats.total ? d3.format(".0%")(stats.arrestShare) : "N/A"
+                                        }`,
+                                        "",
+                                        "Click to explore this area"
+                                    ].join("\n"))                                
+                                .style("left", `${event.pageX + 15}px`)
+                                .style("top", `${event.pageY + 15}px`);
+                        })
+                        .on("mouseout", function() {
+                            d3.select(this).classed("is-hovered", false);
+                            d3.select("#map-tooltip").style("display", "none");
+                        });
+
+                },
+                function(update) {
+                    return update.attr("d", path);
+                },
+                function(exit) {
+                    return exit.remove();
+                }
+            ).on("click", function(event, d) {
+            selectedCommunityArea = Number(d.properties.area_numbe);
+            selectedCommunityName = d.properties.community;
+            d3.select("#reset-area").property("hidden", false);
+
+            d3.select("#area").text(
+                `${d.properties.community} (Area ${selectedCommunityArea})`
+            );
+
+            mapGroup.selectAll(".community-area")
+                .classed("is-selected", area =>
+                    Number(area.properties.area_numbe) === selectedCommunityArea
+                );
+
+            d3.select(this).raise();
+            d3.select("#map-tooltip").style("display", "none");
+
+            loadData();
+        });
+    } catch (error) {
+        console.error("Could not load Chicago boundaries:", error);
+        d3.select("#chart-map").text("Could not load the map.");
+    }
+}
+
+function getCommunityStats(areaNumber) {
+    const incidents = filterByCommunity(
+        citywideYearData,
+        Number(areaNumber)
+    );
+
+    const total = incidents.length;
+
+    const counts = d3.rollups(
+        incidents,
+        rows => rows.length,
+        d => d.primary_type
+    ).sort(
+        (a, b) =>
+            d3.descending(a[1], b[1]) ||
+            d3.ascending(a[0], b[0])
+    );
+
+    const mostCommon = counts[0];
+
+    const arrests = incidents.filter(
+        d => d.arrest === true || d.arrest === "true"
+    ).length;
+
+    return {
+        total,
+        mostCommonType: mostCommon?.[0] || "None",
+        mostCommonCount: mostCommon?.[1] || 0,
+        mostCommonShare: total ? mostCommon[1] / total : 0,
+        arrestShare: total ? arrests / total : 0
+    };
 }
 
 

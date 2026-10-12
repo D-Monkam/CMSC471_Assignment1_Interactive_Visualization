@@ -8,6 +8,93 @@
     font-family: Arial, sans-serif;
 }
 
+#title {
+    padding: 8px 0 8px 20px;
+    margin-bottom: 28px;
+    border-left: 5px solid #d97706;
+}
+
+#title h1 {
+    max-width: 1050px;
+    margin: 0 0 6px;
+    color: #1e293b;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.5px;
+}
+
+#title p {
+    max-width: 900px;
+    margin: 0;
+    color: #475569;
+    line-height: 1;
+}
+
+.controls {
+    padding: 20px;
+    margin-bottom: 28px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    background: #fff;
+}
+
+#top_data {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 28px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    background: #f1f5f9;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    color: #475569;
+}
+
+#top_data p {
+    margin: 0;
+    line-height: 1.5;
+}
+
+#top_data span {
+    color: #1e293b;
+    font-weight: 600;
+}
+
+#top_data #reset-area {
+    margin: 0 0 0 auto;
+    padding: 10px 14px;
+    font-size: 14px;
+}
+
+#top_data #reset-area:focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+    #title {
+        padding-left: 14px;
+    }
+
+    #title p {
+        font-size: 15px;
+    }
+
+    .controls {
+        padding: 12px;
+    }
+
+    #top_data {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    #top_data #reset-area {
+        margin: 0;
+    }
+}
+
 #vis {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -47,7 +134,6 @@
     font-size: 18px;
 }
 
-/* Style only the untransformed trend y-axis group. */
 #chart-three .trend-axis:not([transform]) text {
     font-size: 16px;
     font-weight: 400;
@@ -105,4 +191,68 @@ button {
     font-family: 'Times New Roman', Times, serif;
     border-radius: 50%;
     cursor: pointer;
+}
+
+
+#reset-area {
+    background: #1e293b;
+    color: #fff;
+    font-family: inherit;
+    border: none;
+    border-radius: 6px;
+}
+
+#reset-area:hover {
+    background: #334155;
+}
+
+.community-area {
+    fill: #94a3b8;
+    stroke: #fff;
+    stroke-width: 1;
+}
+
+.community-area.is-hovered {
+    fill: #64748b;
+}
+.community-area.is-selected {
+    fill: #d97706;
+    stroke: #111;
+    stroke-width: 2;
+}
+#map-tooltip {
+    display: none;
+    position: absolute;
+    pointer-events: none;
+    z-index: 1000;
+    padding: 10px 14px;
+    background: #1e293b;
+    color: #fff;
+    border-radius: 6px;
+    font-size: 14px;
+    line-height: 1.5;
+    white-space: pre-line;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 20%);
+}
+
+
+.map-controls {
+    display: flex;
+    gap: 8px;
+}
+
+.map-controls button {
+    margin: 0;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 6px;
+    background: #1e293b;
+    color: #fff;
+    font-family: inherit;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.map-controls button:hover {
+    background: #334155;
 }
