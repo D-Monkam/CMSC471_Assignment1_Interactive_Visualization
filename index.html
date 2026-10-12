@@ -3,19 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lab 1: Intro to D3</title>
+    <title>Chicago Crime Visualization</title>
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
     <div class="container"> <!-- Centers content and sets max width -->
         <h1>Chicago Crime</h1>
-        <div class = "controls">
+        <div class="controls">
+            <p>Selected year: <span id="value">2015</span></p>
             <div id="slider"></div>
         </div>
         <div id="vis">
-            <div id="chart-one"></div>
-            <div id="chart-two"></div>   
-        </div> 
+            <section class="chart-section" aria-labelledby="chart-map-title">
+                <h2 id="chart-map-title">Chicago Community Areas</h2>
+                <p>Color shows share of selected crime type in total reported incidents</p>
+                <div id="chart-map"></div>
+            </section>
+            
+            <section class="chart-section" aria-labelledby="chart-one-title">
+                <h2 id="chart-one-title">Crime types</h2>
+                <p>Reported incidents by crime type, with percentage labels.</p>
+                <div id="chart-one"></div>
+            </section>
+            <section class="chart-section" aria-labelledby="chart-two-title">
+                <h2 id="chart-two-title">Arrests by crime type</h2>
+                <p>
+                    Arrest and non-arrest shares within each crime type.
+                </p>
+                <div id="chart-two"></div>
+            </section>
+            <section class="chart-section trend-section" aria-labelledby="trend-title">
+                <h2 id="trend-title">Changes in crime share</h2>
+                <p id="trend-status" role="status"></p>
+                <p>
+                    Stable means a change within ±1 percentage point.
+                </p>
+                <div id="chart-three"></div>
+                
+            </section>
+        </div>
+
+
     </div>
 
     

@@ -9,25 +9,62 @@
 }
 
 #vis {
-    display: flex;
-    flex-direction: row;
-    gap: 40px;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+    align-items: stretch;
     width: 100%;
 }
 
-#chart-one, #chart-two {
-    flex: 1;
+.chart-section {
     min-width: 0;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    background-color: #fff;
+    box-sizing: border-box;
 }
 
-#chart-one svg, #chart-two svg {
+.chart-section h2 {
+    margin-top: 0;
+}
+
+#chart-map svg, #chart-one svg, #chart-two svg, #chart-three svg {
     width: 100%;
     height: auto;
     display: block;
     margin: 2rem 0;
-    border: 1px solid #ccc;
     box-sizing: border-box;
+}
+
+@media (max-width: 800px) {
+    #vis {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+#chart-three .trend-axis text {
+    font-size: 18px;
+}
+
+/* Style only the untransformed trend y-axis group. */
+#chart-three .trend-axis:not([transform]) text {
+    font-size: 16px;
+    font-weight: 400;
+    fill: #444;
+}
+
+#chart-three .trend-axis:not([transform]) .domain,
+#chart-three .trend-axis:not([transform]) .tick line {
+    display: none;
+}
+
+#chart-three .trend-value {
+    font-size: 18px;
+}
+
+#chart-three .trend-axis-label {
+    font-size: 20px;
 }
 
 .x-axis path,
@@ -47,6 +84,14 @@
 .axis-label {
     font-size: 14px;
     font-weight: bold;
+}
+
+#chart-one .bar {
+    fill: #94a3b8;
+}
+
+#chart-one .bar.most-common {
+    fill: #d97706;
 }
 
 .y-grid {
