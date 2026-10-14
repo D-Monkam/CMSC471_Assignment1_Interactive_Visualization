@@ -45,22 +45,29 @@
             
             <section class="chart-section" aria-labelledby="chart-one-title">
                 <h3 id="chart-one-title">Crime types</h3>
-                <p>Reported incidents by crime type, with percentage labels.</p>
+                <ul class="chart-legend" aria-label="Crime-type colors">
+                    <li><span class="legend-swatch legend-orange" aria-hidden="true"></span>Most common</li>
+                    <li><span class="legend-swatch legend-slate" aria-hidden="true"></span>Other crime types</li>
+                </ul>
                 <div id="chart-one"></div>
             </section>
             <section class="chart-section" aria-labelledby="chart-two-title">
                 <h3 id="chart-two-title">Arrests by crime type</h3>
-                <p>
-                    Arrest (Blue) and non-arrest(yellow) shares within each crime type.
-                </p>
+                <ul class="chart-legend" aria-label="Arrest outcomes within each crime type">
+                    <li><span class="legend-swatch legend-arrest" aria-hidden="true"></span>Arrest</li>
+                    <li><span class="legend-swatch legend-no-arrest" aria-hidden="true"></span>No arrest</li>
+                </ul>
                 <div id="chart-two"></div>
             </section>
             <section class="chart-section trend-section" aria-labelledby="trend-title">
                 <h3 id="trend-title">Changes in crime share</h3>
                 <p id="trend-status" role="status"></p>
-                <p>
-                    Stable means a change within ±1 percentage point. Orange(emerging), Blue(declining)
-                </p>
+                <ul class="chart-legend" aria-label="Crime-share trends">
+                    <li><span class="legend-swatch legend-orange" aria-hidden="true"></span>Increasing share</li>
+                    <li><span class="legend-swatch legend-slate" aria-hidden="true"></span>Stable share</li>
+                    <li><span class="legend-swatch legend-declining" aria-hidden="true"></span>Declining share</li>
+                </ul>
+                <p class="legend-note">Stable: change within &plusmn;1 percentage point. Share can rise even when incident counts fall.</p>
                 <div id="chart-three"></div>
                 
             </section>

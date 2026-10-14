@@ -11,7 +11,7 @@ let citywideYearData = [];
 let targetYear = 2015
 let categories, yAxis
 const t = 1000
-const token = import.meta.env.VITE_CHICAGO_APP_TOKEN
+let crimeDataPromise;
 
 // trends chart
 const trendWindow = 5;
@@ -98,8 +98,7 @@ function init(){
 
 window.addEventListener('load', init);
 
-// Gets data from api and creaste visualizations
-function loadData(){
+async function loadData(){
     const version = ++loadVersion;
     const year = targetYear;
     const communityArea = selectedCommunityArea;
@@ -113,40 +112,41 @@ function loadData(){
     d3.select("#chart-two-title")
         .text(`${geography}: arrests by crime type, ${year}`);
 
-    $.ajax({
-    url: "https://data.cityofchicago.org/api/v3/views/ijzp-q8t2/query.json",
-    type: "POST",
-    dataType: 'json',
-    headers: {
-        'Content-Type': 'application/json',
-        'X-App-Token': token
-    },
-    data: JSON.stringify({
-        query: `SELECT community_area, year, primary_type, arrest
-                WHERE year = ${year}
-                `,
-        page: {
-        pageNumber: 1,
-        pageSize: 486843
-        },
-        includeSynthetic: false
-    })
-    }).done(function(data) {
+    d3.select("#map-tooltip").style("display", "none");
+    d3.select("#trend-status").text("Loading crime data…");
+
+    try {
+        if (!crimeDataPromise) {
+            crimeDataPromise = d3.csv(
+                new URL("../data/chicago-crime-counts.csv", import.meta.url).href,
+                d => ({
+                    year: Number(d.year),
+                    community_area: d.community_area === "" ? null : Number(d.community_area),
+                    primary_type: d.primary_type,
+                    arrest: d.arrest === "true",
+                    incident_count: Number(d.incident_count)
+                })
+            ).catch(error => {
+                crimeDataPromise = undefined;
+                throw error;
+            });
+        }
+        const data = await crimeDataPromise;
         if (version !== loadVersion) return;
-        citywideYearData = data;
-        allData = filterByCommunity(data, communityArea);
+        citywideYearData = data.filter(d => d.year === year);
+        allData = filterByCommunity(citywideYearData, communityArea);
 
         updateAxes();
         updateStackedAxes();
         updateVis();
         updateStackedVis();
+        loadTrendData(year, communityArea, version, data);
         updateMapColors();
-    }).fail(function() {
+    } catch (error) {
         if (version !== loadVersion) return;
-        console.error("Could not load selected-year crime data.");
-    });
-
-    loadTrendData(year, communityArea, version);
+        d3.select("#trend-status").text("Could not load the local crime data file.");
+        console.error("Could not load local crime data:", error);
+    }
 }
 
 // Sets up interactive elements such a slider
@@ -189,12 +189,12 @@ function updateAxes(){
                 NonArrests: 0,
             };
         }
-        acc[type].total += 1;
+        acc[type].total += d.incident_count;
 
         if (d.arrest == true){
-            acc[type].Arrests += 1;
+            acc[type].Arrests += d.incident_count;
         }else{
-            acc[type].NonArrests += 1;
+            acc[type].NonArrests += d.incident_count;
         }
 
         return acc;
@@ -278,7 +278,7 @@ function updateVis(){
         .attr("x", d => xScale(d.total) + 6)
         .attr("y", d => yScale(d.type) + yScale.bandwidth() / 2)
         .attr("dy", "0.35em")
-        .text(d => d3.format(".1%")(d.total / allData.length));
+        .text(d => d3.format(".1%")(d.total / d3.sum(allData, row => row.incident_count)));
 
     const highestCount = d3.max(categories, d => d.total);
     svg1.selectAll("rect.bar")
@@ -349,7 +349,7 @@ function updateStackedVis(){
     });
 }
 
-async function loadTrendData(endYear, communityArea, version) {
+function loadTrendData(endYear, communityArea, version, data) {
     const startYear = endYear - trendWindow + 1;
 
     const geography = communityArea === null
@@ -369,44 +369,7 @@ async function loadTrendData(endYear, communityArea, version) {
 
     d3.select("#trend-status").text("Loading trend data..");
     try {
-            const rows = [];
-            const pageSize = 10000;
-            let pageNumber = 1;
-
-            // Aggregate on the server rather than downloading five years
-            // of individual incident records.
-            while (true) {
-                const page = await $.ajax({
-                    url: "https://data.cityofchicago.org/api/v3/views/ijzp-q8t2/query.json",
-                    type: "POST",
-                    dataType: "json",
-                    headers: {
-                        "Content-Type": "application/json",
-                        "X-App-Token": token
-                    },
-                    data: JSON.stringify({
-                        query: `
-                            SELECT year, community_area, primary_type,
-                                count(*) AS incident_count
-                            WHERE year BETWEEN ${startYear} AND ${endYear}
-                            GROUP BY year, community_area, primary_type
-                            ORDER BY year, community_area, primary_type
-                        `,
-                        page: {
-                            pageNumber,
-                            pageSize
-                        },
-                        includeSynthetic: false
-                    })
-                });
-
-                if (version !== loadVersion) return;
-
-                rows.push(...page);
-
-                if (page.length < pageSize) break;
-                pageNumber += 1;
-            }
+            const rows = data.filter(d => d.year >= startYear && d.year <= endYear);
 
             const filteredRows = filterByCommunity(rows, communityArea);
 
@@ -791,11 +754,11 @@ function getCommunityStats(areaNumber) {
         Number(areaNumber)
     );
 
-    const total = incidents.length;
+    const total = d3.sum(incidents, d => d.incident_count);
 
     const counts = d3.rollups(
         incidents,
-        rows => rows.length,
+        rows => d3.sum(rows, d => d.incident_count),
         d => d.primary_type
     ).sort(
         (a, b) =>
@@ -805,9 +768,10 @@ function getCommunityStats(areaNumber) {
 
     const mostCommon = counts[0];
 
-    const arrests = incidents.filter(
-        d => d.arrest === true || d.arrest === "true"
-    ).length;
+    const arrests = d3.sum(
+        incidents.filter(d => d.arrest === true),
+        d => d.incident_count
+    );
 
     return {
         total,

@@ -1,0 +1,15 @@
+{
+  "source": "https://data.cityofchicago.org/api/v3/views/ijzp-q8t2/query.json",
+  "exported_at_utc": "2026-10-14T14:26:12.490Z",
+  "start_year": 2006,
+  "end_year": 2026,
+  "grouped_rows": 65887,
+  "total_incidents": 6286829,
+  "query": "SELECT year, community_area, primary_type, arrest,\n    count(*) AS incident_count\n    WHERE year BETWEEN 2006 AND 2026\n    GROUP BY year, community_area, primary_type, arrest\n    ORDER BY year, community_area, primary_type, arrest",
+  "notes": [
+    "Rows are grouped counts, not individual incidents.",
+    "Blank community_area values are retained for Chicago-wide totals.",
+    "2026 is incomplete at export time.",
+    "The CSV can be used without an API token or backend."
+  ]
+}
