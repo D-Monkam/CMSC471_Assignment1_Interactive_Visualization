@@ -36,6 +36,11 @@ const stableThreshold = 1;
 const mapWidth = 700;
 const mapHeight = 750;
 
+let mapMetric = 'total';
+let mapCrimeType =  null;
+let mapAreas = null;
+let mapPath = null;
+
 // Bar Chart
 let xScale, yScale
 
@@ -86,6 +91,7 @@ function init(){
         d3.select(this).property("hidden", true);
         loadData();
     });
+    setupMapControls();
     loadMap();
     loadData();
 }
@@ -134,6 +140,7 @@ function loadData(){
         updateStackedAxes();
         updateVis();
         updateStackedVis();
+        updateMapColors();
     }).fail(function() {
         if (version !== loadVersion) return;
         console.error("Could not load selected-year crime data.");
@@ -708,7 +715,7 @@ async function loadMap() {
             .call(mapZoom.transform, d3.zoomIdentity);
         });
 
-        mapGroup.selectAll(".community-area")
+        mapAreas = mapGroup.selectAll(".community-area")
             .data(boundaries.features, d => d.properties.area_numbe)
             .join(
                 function(enter) {
@@ -771,6 +778,7 @@ async function loadMap() {
 
             loadData();
         });
+        updateMapColors();
     } catch (error) {
         console.error("Could not load Chicago boundaries:", error);
         d3.select("#chart-map").text("Could not load the map.");
@@ -809,6 +817,103 @@ function getCommunityStats(areaNumber) {
         arrestShare: total ? arrests / total : 0
     };
 }
+// Map controls
 
+function setupMapControls() {
+    d3.select("#map-metric").on("change", function () {
+        mapMetric = this.value;
+        const show = mapMetric === "crimeShare";
+        d3.select("#map-crime").property("hidden", !show);
+        d3.select("label[for=map-crime]").property("hidden", !show);
+        updateMapColors();
+    });
+
+    d3.select("#map-crime").on("change", function () {
+        mapCrimeType = this.value;
+        updateMapColors();
+    });
+}
+
+
+function computeAreaMetrics() {
+    return d3.rollup(
+        citywideYearData,
+        v => {
+            const total = v.length;
+
+            const arrests = v.filter(
+                d => d.arrest === true || d.arrest === 'true'
+            ).length;
+
+            const selectedCrime = v.filter(
+                d => d.primary_type === mapCrimeType
+            ).length;
+
+            return {
+                total,
+                arrest: total ? arrests / total : 0,
+                nonArrest: total ? 1 - (arrests / total) : 0,
+                crimeShare: total ? selectedCrime / total : 0
+            };
+        },
+        d => Number(d.community_area)
+    );
+}
+
+// more efficient labelling
+const metricConfig = {
+    total: {label : "Total reported incidents", format: d3.format(",")},
+    arrest: {label : "Arrest percentage", format: d3.format(".0%")},
+    nonArrest: {label : "Non-arrest percentage", format: d3.format(".0%")},
+    crimeShare: {label : `Selected crime share:`, format: d3.format(".1%")}
+}
+
+function updateMapColors() {
+    console.log(mapAreas?.size(), mapMetric)
+    if (!mapAreas) {
+        return;
+    }
+    const metrics = computeAreaMetrics();
+    const values = Array.from(metrics.values()).map(
+        v => v[mapMetric]
+    )
+    const mapScale = d3.scaleSequential()
+        .domain([0, d3.max(values) || 1])
+        .interpolator(d3.interpolateBlues)
+
+    mapAreas
+        .transition()
+        .duration(500)
+        .style("fill", d => {
+            const v = metrics.get(Number(d.properties.area_numbe))?.[mapMetric];
+            return v == null ? "#eee" : mapScale(v);
+        });
+    
+    drawLegend(mapScale, metricConfig[mapMetric])
+}
+
+function drawLegend(color, cfg) {
+    const w = 240, h = 12;
+    const host = d3.select("#map-legend").html("");   // clear and rebuild
+
+    host.append("div").attr("class", "legend-title").text(cfg.label);
+
+    const svg = host.append("svg").attr("width", w + 20).attr("height", 40);
+
+    const gradId = "legend-gradient";
+    const grad = svg.append("defs").append("linearGradient").attr("id", gradId);
+    d3.range(0, 1.01, 0.1).forEach(t =>
+        grad.append("stop")
+            .attr("offset", `${t * 100}%`)
+            .attr("stop-color", color(color.domain()[0] + t * (color.domain()[1] - color.domain()[0])))
+    );
+
+    svg.append("rect").attr("x", 10).attr("width", w).attr("height", h)
+        .attr("fill", `url(#${gradId})`);
+
+    const axisScale = d3.scaleLinear().domain(color.domain()).range([10, 10 + w]);
+    svg.append("g").attr("transform", `translate(0,${h})`)
+        .call(d3.axisBottom(axisScale).ticks(5).tickFormat(cfg.format));
+}
 
 

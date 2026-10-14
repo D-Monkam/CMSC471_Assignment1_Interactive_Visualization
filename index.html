@@ -24,11 +24,22 @@
             <section class="chart-section" aria-labelledby="chart-map-title">
                 <h2 id="chart-map-title">Chicago Community Areas</h2>
                 <div class="map-controls" role="group" aria-label="Map zoom controls">
+                    <select id="map-metric">
+                        <option value="total" selected>Total Reported Incidents</option>
+                        <option value="arrest">Arrest Percentage</option>
+                        <option value="nonArrest">Non-Arrest Percentage</option>
+                        <option value="crimeShare">Selected Crime Share</option>
+                    </select>
+                    <select id="map-crime" hidden>
+
+                    </select>
                     <button id="zoom-in" type="button" aria-label="Zoom in">+</button>
                     <button id="zoom-out" type="button" aria-label="Zoom out">&minus;</button>
                     <button id="reset-view" type="button">Reset view</button>
                 </div>
-                <div id="chart-map"></div>
+                <div id="chart-map">
+                    <div id="map-legend"></div>
+                </div>
                 
             </section>
             

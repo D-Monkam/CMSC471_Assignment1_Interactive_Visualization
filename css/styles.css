@@ -207,16 +207,16 @@ button {
 }
 
 .community-area {
-    fill: #94a3b8;
+    /* fill: #94a3b8; */
     stroke: #fff;
     stroke-width: 1;
 }
 
 .community-area.is-hovered {
-    fill: #64748b;
+    /* fill: #64748b; */
 }
 .community-area.is-selected {
-    fill: #d97706;
+    /* fill: #d97706; */
     stroke: #111;
     stroke-width: 2;
 }
