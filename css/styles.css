@@ -236,6 +236,56 @@ button {
 }
 
 
+.chart-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    margin: 12px 0;
+    padding: 0;
+    list-style: none;
+    color: #475569;
+    font-size: 14px;
+}
+
+.chart-legend li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.legend-swatch {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    border-radius: 3px;
+}
+
+.legend-orange {
+    background: #d97706;
+}
+
+.legend-slate {
+    background: #94a3b8;
+}
+
+.legend-arrest {
+    background: #e5b114;
+}
+
+.legend-no-arrest {
+    background: #2c7fb8;
+}
+
+.legend-declining {
+    background: #2563eb;
+}
+
+.legend-note {
+    color: #475569;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
 .map-controls {
     display: flex;
     gap: 8px;
