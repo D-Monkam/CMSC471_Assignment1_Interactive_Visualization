@@ -71,6 +71,222 @@
                 <div id="chart-three"></div>
                 
             </section>
+
+                
+            <section>
+
+                <h2>About the Project</h2>
+
+                <h3>Project Overview</h3>
+                <p>
+                    Our project explores crime patterns across Chicago using the
+                    City of Chicago's Crimes - 2001 to Present dataset, which
+                    contains reported crime incidents from 2001 onward, excluding
+                    the most recent seven days.
+                </p>
+
+                <p>
+                    We focus on the years 2010–2026 to examine how crime profiles
+                    differ across Chicago's 77 community areas and how these
+                    patterns change over time. We also retain data from 2006
+                    onward to support our earliest five-year trend comparisons.
+                </p>
+
+                <p>
+                    Our visualization focuses on three main questions:
+                </p>
+
+                <ul>
+                    <li>Which crime types are most prominent in Chicago and its communities?</li>
+                    <li>How do arrest outcomes differ across crime types?</li>
+                    <li>Which crime types are increasing or decreasing in share over time?</li>
+                </ul>
+
+                <h3>Dataset and Variables</h3>
+                <p>
+                    Our data comes from the City of Chicago Data Portal.
+                    We use the following variables:
+                </p>
+
+                <ul>
+                    <li><strong>Primary Type:</strong> Category of crime, such as theft or burglary.</li>
+                    <li><strong>Year:</strong> The year the incident occurred.</li>
+                    <li><strong>Arrest:</strong> Whether an arrest was recorded for the incident.</li>
+                    <li><strong>Community Area:</strong> The community area number associated with the incident.</li>
+                    <li><strong>Incident Count:</strong> Number of records grouped by year, community area, crime type, and arrest status.</li>
+                </ul>
+
+                <p>
+                    We chose community areas instead of wards because they provide
+                    a more consistent geographic basis for comparing neighborhood
+                    crime profiles.
+                </p>
+
+                <h3>Visualization Design</h3>
+
+                <h4>Crime Types — Horizontal Bar Chart</h4>
+                <p>
+                    Our first visualization uses a horizontal bar chart to compare
+                    the frequency of different crime types. We considered using
+                    a pie chart, but the large number of crime categories would
+                    have resulted in many small slices and crowded labels.
+                </p>
+                <p>
+                    Crime types are represented by vertical position, while bar
+                    length represents the number of incidents using a square-root
+                    scale. Percentage labels show each crime type's share of
+                    reported incidents. The categories are sorted in descending
+                    order, and orange highlights the most common crime type.
+                    The horizontal layout also accommodates longer crime names.
+                </p>
+
+                <h4>Arrest Outcomes — 100% Stacked Bar Chart</h4>
+                <p>
+                    Our second visualization compares arrest and non-arrest
+                    outcomes for each crime type. We chose a 100% stacked bar
+                    chart because crime counts vary substantially between
+                    categories. Using percentages allows users to compare
+                    arrest rates without differences in total incidents
+                    overwhelming the visualization.
+                </p>
+                <p>
+                    Each bar represents 100% of incidents for a crime type.
+                    Yellow represents arrests and blue represents non-arrests,
+                    while segment lengths and percentage labels communicate
+                    their respective proportions.
+                </p>
+
+                <h4>Crime-Share Trends — Diverging Bar Chart</h4>
+                <p>
+                    Our third visualization shows how crime-type shares have
+                    changed over a five-year comparison window. A central
+                    zero line separates increases from decreases, while bar
+                    direction, length, and color communicate the direction
+                    and magnitude of change.
+                </p>
+                <p>
+                    Changes are measured in percentage points rather than raw
+                    incident counts because we are interested in the relative
+                    prominence of crime types. Changes within ±1 percentage
+                    point are classified as stable.
+                </p>
+                <p>
+                    We considered a multiline chart, but displaying a separate
+                    line for every crime type would have made the visualization
+                    too cluttered.
+                </p>
+
+                <h4>Interactive Chicago Map</h4>
+                <p>
+                    The map allows users to explore crime patterns geographically
+                    across Chicago's 77 community areas. Its sequential color
+                    scale uses darker shades to represent higher values of the
+                    selected metric. A dropdown allows users to switch between
+                    measures without requiring multiple maps.
+                </p>
+
+                <h3>Interactive Features</h3>
+                <ul>
+                    <li>
+                        <strong>Year Slider:</strong>
+                        Filters the charts by the selected year and adjusts the
+                        five-year trend comparison window. We chose a slider
+                        over buttons because it provides a compact and intuitive
+                        way to explore consecutive years.
+                    </li>
+                    <li>
+                        <strong>Community Area Selection:</strong>
+                        Clicking a community area on the map filters all three
+                        charts to that location. A reset button restores
+                        Chicago-wide results without changing the selected year.
+                    </li>
+                    <li>
+                        <strong>Map Zoom and Pan:</strong>
+                        Allows users to inspect smaller community areas.
+                        Zoom-in, zoom-out, and reset-view controls provide
+                        additional navigation options.
+                    </li>
+                    <li>
+                        <strong>Tooltips:</strong>
+                        Hovering over a community displays its incident count,
+                        most common crime type and share, and arrest share.
+                        Trend tooltips display comparison years, underlying
+                        counts, starting and ending shares, and percentage-point
+                        changes.
+                    </li>
+                    <li>
+                        <strong>Map Metric Selector:</strong>
+                        Allows users to change the metric represented by the
+                        map's color scale. The legend updates to reflect
+                        the selected measure.
+                    </li>
+                </ul>
+
+                <h3>Development Process</h3>
+                <p>
+                    Our team divided development into three sequential phases,
+                    with each team member responsible for one phase.
+                    We spent approximately <strong>20 person-hours</strong>
+                    developing the application.
+                </p>
+
+                <h4>Part 1 — Foundation and Initial Charts (7 hours)</h4>
+                <p>
+                    The first phase established the HTML structure, JavaScript
+                    organization, and data processing pipeline. We implemented
+                    the initial crime-type bar chart, 100% stacked arrest chart,
+                    and year slider. We organized the code into functions for
+                    initialization, updating axes, updating visualizations,
+                    and handling interactions.
+                </p>
+                <p>
+                    The stacked bar chart was particularly challenging because
+                    understanding and implementing D3's stacking functionality
+                    required additional research and debugging.
+                </p>
+
+                <h4>Part 2 — Chicago Map and Trend Chart (7 hours)</h4>
+                <p>
+                    The second phase introduced the diverging trend chart and
+                    interactive Chicago map. We developed the calculations for
+                    crime shares and percentage-point changes, using course
+                    Labs 4–5 as references for the diverging bar chart.
+                    We also connected community selection on the map to
+                    filtering across the three charts.
+                </p>
+
+                <h4>Part 3 — Map Color Encoding and Interactions (6 hours)</h4>
+                <p>
+                    The final phase focused on implementing the map's
+                    metric-dependent color encoding and interactive controls.
+                    One major challenge was organizing updates so changes
+                    to the selected metric or year were reflected correctly.
+                    We also refined the selected-region colors, borders,
+                    and tooltips to improve usability and clarity.
+                </p>
+
+                <h3>Use of AI Tools</h3>
+                <p>
+                    We used GitHub Copilot, Claude, and ChatGPT as development
+                    support tools. ChatGPT helped with brainstorming visualization
+                    designs and interaction techniques, while GitHub Copilot and
+                    Claude assisted with debugging, improving visualization
+                    clarity, and checking calculations.
+                </p>
+
+                <h3>References</h3>
+                <ul>
+                    <li>
+                        <a href="https://data.cityofchicago.org/Public-Safety/Crimes-2001-to-Present/ijzp-q8t2/about_data"
+                        target="_blank" rel="noopener noreferrer">
+                            City of Chicago Data Portal — Crimes, 2001 to Present
+                        </a>
+                    </li>
+                    <li>Course Labs 4–5 — Diverging Bar Chart Reference</li>
+                </ul>
+
+            </section>
+
         </div>
 
 
