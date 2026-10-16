@@ -40,6 +40,8 @@ let mapMetric = 'total';
 let mapCrimeType =  null;
 let mapAreas = null;
 let mapPath = null;
+let areaMetrics = new Map();
+
 
 // Bar Chart
 let xScale, yScale
@@ -135,7 +137,7 @@ async function loadData(){
         if (version !== loadVersion) return;
         citywideYearData = data.filter(d => d.year === year);
         allData = filterByCommunity(citywideYearData, communityArea);
-
+        updateCrimeOptions();
         updateAxes();
         updateStackedAxes();
         updateVis();
@@ -690,6 +692,9 @@ async function loadMap() {
                             
                             d3.select(this).classed("is-hovered", true);
                             const stats = getCommunityStats(d.properties.area_numbe);
+                            const cfg = metricConfig[mapMetric];
+                            const label = mapMetric === 'crimeShare' && mapCrimeType ? `Crime share of ${mapCrimeType} by area` : cfg.label;
+                            const value = areaMetrics.get(Number(d.properties.area_numbe))?.[mapMetric];
 
                             d3.select("#map-tooltip")
                                 .style("display", "block")
@@ -697,8 +702,8 @@ async function loadMap() {
                                         `${d.properties.community} · Area ${d.properties.area_numbe}`,
                                         `${targetYear}`,
                                         "",
-                                        `Reported incidents: ${d3.format(",")(stats.total)}`,
-                                        `Most common: ${stats.mostCommonType} — ` +
+                                        `${label}: ${value == null ? "N/A" : cfg.format(value)}`,
+                                        `Most common incident: ${stats.mostCommonType} — ` +
                                             `${d3.format(",")(stats.mostCommonCount)} ` +
                                             `(${d3.format(".0%")(stats.mostCommonShare)})`,
                                         `Arrest share: ${
@@ -803,16 +808,17 @@ function computeAreaMetrics() {
     return d3.rollup(
         citywideYearData,
         v => {
-            const total = v.length;
+            const total = d3.sum(v, d => d.incident_count);
 
-            const arrests = v.filter(
-                d => d.arrest === true || d.arrest === 'true'
-            ).length;
+            const arrests = d3.sum(
+                v.filter(d => d.arrest === 'true' || d.arrest === true),
+                d => d.incident_count
+            );
 
-            const selectedCrime = v.filter(
-                d => d.primary_type === mapCrimeType
-            ).length;
-
+            const selectedCrime = d3.sum(
+                v.filter(d => d.primary_type === mapCrimeType),
+                d => d.incident_count
+            )   
             return {
                 total,
                 arrest: total ? arrests / total : 0,
@@ -829,7 +835,7 @@ const metricConfig = {
     total: {label : "Total reported incidents", format: d3.format(",")},
     arrest: {label : "Arrest percentage", format: d3.format(".0%")},
     nonArrest: {label : "Non-arrest percentage", format: d3.format(".0%")},
-    crimeShare: {label : `Selected crime share:`, format: d3.format(".1%")}
+    crimeShare: {label : "Selected crime share in area", format: d3.format(".1%")}
 }
 
 function updateMapColors() {
@@ -837,8 +843,8 @@ function updateMapColors() {
     if (!mapAreas) {
         return;
     }
-    const metrics = computeAreaMetrics();
-    const values = Array.from(metrics.values()).map(
+    areaMetrics = computeAreaMetrics();
+    const values = Array.from(areaMetrics.values()).map(
         v => v[mapMetric]
     )
     const mapScale = d3.scaleSequential()
@@ -849,7 +855,7 @@ function updateMapColors() {
         .transition()
         .duration(500)
         .style("fill", d => {
-            const v = metrics.get(Number(d.properties.area_numbe))?.[mapMetric];
+            const v = areaMetrics.get(Number(d.properties.area_numbe))?.[mapMetric];
             return v == null ? "#eee" : mapScale(v);
         });
     
@@ -859,10 +865,11 @@ function updateMapColors() {
 function drawLegend(color, cfg) {
     const w = 240, h = 12;
     const host = d3.select("#map-legend").html("");   // clear and rebuild
+    const label = mapMetric === 'crimeShare' && mapCrimeType ? `Crime share of ${mapCrimeType} by area` : cfg.label;
+    host.append("div").attr("class", "legend-title").text(label);
 
-    host.append("div").attr("class", "legend-title").text(cfg.label);
-
-    const svg = host.append("svg").attr("width", w + 20).attr("height", 40);
+    const svg = host.append("svg").attr("width", w + 20).attr("height", 40)
+        .attr("transform", `translate(0,${-(h * 2)})`);
 
     const gradId = "legend-gradient";
     const grad = svg.append("defs").append("linearGradient").attr("id", gradId);
@@ -880,4 +887,26 @@ function drawLegend(color, cfg) {
         .call(d3.axisBottom(axisScale).ticks(5).tickFormat(cfg.format));
 }
 
+function updateCrimeOptions() {
+    // creates an array of [TYPE, COUNT] pairs
+    const types = Array.from(
+        d3.rollup(
+            citywideYearData,
+            v => d3.sum(v, d => d.incident_count),
+            d => d.primary_type
+        )
+    )
+    .sort((a, b) => d3.descending(a[1], b[1])) // sorts the list by count in descending order
+    .map(d => d[0]) // only keeps the types in descending order
+    
+    if (!types.includes(mapCrimeType)) mapCrimeType = types[0] ?? null;
 
+    d3.select("#map-crime")
+        .selectAll("option")
+        .data(types, d => d)
+        .join("option")
+        .attr("value", d => d)
+        .text(d => d);
+
+    d3.select("#map-crime").property("value", mapCrimeType);
+}
